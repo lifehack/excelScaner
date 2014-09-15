@@ -7,10 +7,13 @@ from tkFileDialog import *
 from tkMessageBox import *
 import os
 from ConfigParser import *
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 def readConfig():
-    if not os.path.exists("config.ini"):
-        cfgfile = open("config.ini", "w")
+    if not os.path.exists("./config.ini"):
+        cfgfile = open("./config.ini", "w")
 
         cf = ConfigParser()
         cf.add_section('ExcelFilePath')
@@ -27,35 +30,36 @@ def readConfig():
 
         return
 
-    cf = ConfigParser()
-    cf.read("config.ini")
+    try:
+        cf = ConfigParser()
+        cf.read("./config.ini")
 
-    filepath.set(cf.get("ExcelFilePath", "path"))
+        filepath.set(cf.get("ExcelFilePath", "path"))
 
-    for k, v in cf.items("Field"):
-        if v.strip():
-            field.insert(END, v)
+        for k, v in cf.items("Field"):
+            if v.strip():
+                field.insert(END, v)
 
-    query.set(cf.get("Query", "key"))
+        query.set(cf.get("Query", "key"))
+    except:
+        pass
 
 def writeConfig():
-    cfgfile = open("config.ini", "w")
 
     cf = ConfigParser()
     cf.add_section('ExcelFilePath')
-    cf.set('ExcelFilePath', 'path', filepath.get())
+    cf.set('ExcelFilePath', 'path', unicode(filepath.get()))
     cf.add_section('Field')
 
     ft = field.get(0, END)
 
     for i in range(len(ft)):
-        cf.set('Field', 'Field_'+str(i), ft[i].encode('utf-8'))
+        cf.set('Field', 'Field_'+str(i), unicode(ft[i]))
 
     cf.add_section("Query")
-    cf.set("Query", "key", query.get())
+    cf.set("Query", "key", unicode(query.get()))
 
-    cf.write(cfgfile)
-    cfgfile.close()
+    cf.write(open("./config.ini", "w"))
 
     sys.exit()
 
@@ -78,7 +82,7 @@ def filebrowse(target):
     #调用filedialog模块的askdirectory()函数去打开文件夹
     fp = askdirectory()
     if fp:
-        target.set(fp) #将选择好的路径加入到entry里面
+        target.set(fp+'/') #将选择好的路径加入到entry里面
 
 pathbtn = Button(pathframe, text=u"浏览", command=lambda: filebrowse(filepath))
 pathbtn.pack(side=LEFT, padx=2)
@@ -100,15 +104,22 @@ def insertfield(event):
     if not title.get().strip():
         return
 
-    if not title.get().strip() in fieldname.get():
-        field.insert(END, title.get())
-        return
+    for x in field.get(0, END):
+        if title.get().strip() == x:
+            return
+
+    field.insert(END, title.get())
 
 rowinput.bind("<Return>", insertfield)
 
 fieldname = StringVar()
-field = Listbox(filedframe, listvariable=fieldname, selectmode=MULTIPLE)
+field = Listbox(filedframe, listvariable=fieldname, selectmode=SINGLE)
 field.pack(side=TOP, fill=BOTH, expand=1)
+
+def deleteitems(event):
+    field.delete(field.curselection()[0])
+
+field.bind('<Delete>', deleteitems)
 
 rowbtn = Button(rowframe, text=u"添加", command=lambda: insertfield(""))
 rowbtn.pack(side=LEFT)
@@ -157,7 +168,11 @@ def queryprocess():
 
         p = filepath.get() + f
 
-        xls = open_workbook(p)
+        try:
+            xls = open_workbook(p)
+        except:
+            continue
+
         for x in range(xls.nsheets):
             sh = xls.sheets()[x]
 
@@ -185,8 +200,8 @@ def queryprocess():
 querybtn = Button(inputframe, text=u"查询", command=queryprocess)
 querybtn.pack(side=LEFT)
 
-filedframe.pack(side=LEFT, fill=BOTH, expand=1, anchor=W, padx=5)
-queryframe.pack(side=RIGHT, anchor=E, padx=5)
+filedframe.pack(side=LEFT, fill=BOTH, expand=1, anchor=W)
+queryframe.pack(side=RIGHT, anchor=E)
 
 pathframe.pack(side=TOP, fill=X, expand=1, padx=5, pady=2)
 operateframe.pack(side=TOP, fill=X, expand=1, padx=5, pady=2)
