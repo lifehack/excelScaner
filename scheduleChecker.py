@@ -141,7 +141,7 @@ queryresult = Text(queryframe)
 queryresult.pack(side=TOP, fill=X, expand=1)
 
 def scan(key):
-    queryresult.insert(END, key+",")
+    queryresult.insert(END, key+"begin\n")
 
     if not filepath:
         showwarning(u"错误", u"请输入路径！")
@@ -160,7 +160,7 @@ def scan(key):
         for r in range(sh.nrows):
             for c in range(sh.ncols):
                 v = unicode(sh.cell_value(r, c)).replace(" ","")
-                if i in v:
+                if cmp(i,v)==0:
                     return (r,c)
 
     for f in os.listdir(filepath.get()):
@@ -190,23 +190,24 @@ def scan(key):
                 if not result[r]:
                     continue
 
-                print p
-
                 result[r] = unicode( sh.cell_value(row, result[r][1]) )
 
                 queryresult.insert(END, result[r])
                 queryresult.insert(END, ",")
 
-    queryresult.insert(END, "\n")
+            queryresult.insert(END, "\n")
 
-    return (key, result)
+    queryresult.insert(END, "end\n")
 
-def generatexls(name, result):
+    return result
+
+def generatexls(result):
 
     wb = Workbook()
 
     ws = wb.add_sheet("transcripts")
 
+    ####################title begin########################
     titlefont = Font() # Create the Font
     titlefont.name = "SimHei"
     titlefont.bold = True
@@ -248,11 +249,17 @@ def generatexls(name, result):
     ws.write_merge(2,2,0,6,u"   学习期限：自 2011年 9 月至2014年 6月", personalinfostyle)
     ws.row(3).height_mismatch = 1
     ws.row(3).height = 18*20
-    ws.write_merge(3,3,0,6,u"   姓名：韩卯辉    学号：113520081002001    院、系：计算机学院", personalinfostyle)
+
+    info = "   姓名：%s    学号：%s    院、系：%s" % (result[u"姓名"].encode("utf-8"),result[u"学号"].encode("utf-8"),result[u"学院"].encode("utf-8"))
+    ws.write_merge(3,3,0,6, unicode(info), personalinfostyle)
     ws.row(4).height_mismatch = 1
     ws.row(4).height = 18*20
-    ws.write_merge(4,4,0,6,u"   专业：信号与信息处理    方向：信号处理技术    导  师：黄祥林", personalinfostyle)
+    info = "   专业：%s    方向：信号处理技术    导  师：黄祥林" % result[u"专业"].encode("utf-8")
+    ws.write_merge(4,4,0,6,unicode(info), personalinfostyle)
 
+    ####################title end########################
+
+    ####################table begin########################
     tabletitlefont = Font() # Create the Font
     tabletitlefont.name = "SimSum"
     tabletitlefont.height = 240 # 12px * 20
@@ -309,8 +316,36 @@ def generatexls(name, result):
         ws.write(6+i,4,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
         ws.write(6+i,5,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
         ws.write(6+i,6,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+    ####################table end########################
 
-    wb.save("transcripts.xls")
+    ####################tail begin########################
+    ws.row(26).height_mismatch = 1
+    ws.row(26).height = 18*20
+
+    tailfont = Font() # Create the Font
+    tailfont.name = "SimSum"
+    tailfont.height = 220 # 11px * 20
+    tailalignment = Alignment()
+    tailalignment.horz = Alignment.HORZ_RIGHT
+    tailalignment.vert = Alignment.VERT_CENTER
+    tailstyle = XFStyle() # Create the Style
+    tailstyle.font = tailfont # Apply the Font to the Style
+    tailstyle.alignment = tailalignment
+    ws.row(27).height_mismatch = 1
+    ws.row(27).height = 23*20
+    ws.write_merge(27,27,0,6,u"研究生教学秘书审核签字：                   ", tailstyle)
+    ws.row(28).height_mismatch = 1
+    ws.row(28).height = 23*20
+    ws.write_merge(28,28,0,6,u"院(系)公章：                   ", tailstyle)
+    ws.row(29).height_mismatch = 1
+    ws.row(29).height = 42*20
+    ws.write_merge(29,29,0,6,u"年    月    日", tailstyle)
+
+    ####################tail end########################
+
+    xlsname = "%s.xls" % result[u"学号"]
+
+    wb.save(unicode(xlsname))
 
 
 def queryprocess():
@@ -320,7 +355,7 @@ def queryprocess():
     querylist = query.get().strip().split(",")
 
     for q in querylist:
-        generatexls(q, scan(q))
+        generatexls(scan(q))
 
 querybtn = Button(inputframe, text=u"查询", command=queryprocess)
 querybtn.pack(side=LEFT)
