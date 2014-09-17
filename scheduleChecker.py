@@ -24,6 +24,7 @@ def readConfig():
         cf.add_section("ExcelFilePath")
         cf.set("ExcelFilePath", "score", "")
         cf.set("ExcelFilePath", "name", "")
+        cf.set("ExcelFilePath", "result", "")
         # cf.add_section("Field")
         # cf.set("Field", "Field_0", "")
         cf.add_section("Query")
@@ -40,6 +41,7 @@ def readConfig():
 
         transcriptpath.set(cf.get("ExcelFilePath", "score"))
         infopath.set(cf.get("ExcelFilePath", "name"))
+        resultpath.set(cf.get("ExcelFilePath", "result"))
         # for k, v in cf.items("Field"):
         #     if v.strip():
         #         field.insert(END, v)
@@ -54,6 +56,7 @@ def writeConfig():
     cf.add_section("ExcelFilePath")
     cf.set("ExcelFilePath", "score", unicode(transcriptpath.get()))
     cf.set("ExcelFilePath", "name", unicode(infopath.get()))
+    cf.set("ExcelFilePath", "result", unicode(resultpath.get()))
     # cf.add_section("Field")
     # ft = field.get(0, END)
     # for i in range(len(ft)):
@@ -99,6 +102,16 @@ infoinput.pack(side=LEFT, fill=X, expand=1, padx=2)
 infobtn = Button(infoframe, text=u"浏览", command=lambda: filebrowse(infopath))
 infobtn.pack(side=LEFT, padx=2)
 infoframe.pack(side=TOP, fill=X, expand=1)
+
+resultframe = Frame(pathframe)
+resulttip = Label(resultframe,text=u"名单路径: ")
+resulttip.pack(side=LEFT)
+resultpath = StringVar()
+resultinput = Entry(resultframe, width=50, textvariable=resultpath)
+resultinput.pack(side=LEFT, fill=X, expand=1, padx=2)
+resultbtn = Button(resultframe, text=u"浏览", command=lambda: filebrowse(resultpath))
+resultbtn.pack(side=LEFT, padx=2)
+resultframe.pack(side=TOP, fill=X, expand=1)
 
 queryframe = LabelFrame(root, text=u"查询结果")
 
@@ -285,7 +298,7 @@ def generatexls(name, score):
 
         ws.write(6+i,0,i,easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
 
-        if i>=len(score) or not score[i][u"课程名称"].strip():
+        if i>len(score):
             ws.write(6+i,1,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
             ws.write(6+i,2,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
             ws.write(6+i,3,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
@@ -294,18 +307,21 @@ def generatexls(name, score):
             ws.write(6+i,6,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
             continue
         else:
-            ws.write(6+i,1,score[i][u"课程名称"],easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            ws.write(6+i,1,score[i-1][u"课程名称"],easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
             ws.write(6+i,2,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
             ws.write(6+i,3,2,easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
 
             timedict = {u"上":4,u"下":5,u"1":4,u"2":5,}
-            t = score[i][u"学年学期"][len(score[i][u"学年学期"])-1]
+            t = score[i-1][u"学年学期"][len(score[i-1][u"学年学期"])-1]
+
+            sc = score[i-1][u"考试成绩"]
+
 
             if timedict[t]==4:
-                ws.write(6+i, 4, int(round(float(score[i][u"考试成绩"]))),easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+                ws.write(6+i, 4, round(float(sc)) if "." in sc else sc,easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
                 ws.write(6+i, 5, u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
             else:
-                ws.write(6+i, 5, int(round(float(score[i][u"考试成绩"]))),easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+                ws.write(6+i, 5, round(float(sc)) if "." in sc else sc,easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
                 ws.write(6+i, 4, u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
 
             ws.write(6+i, 6, u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
@@ -337,7 +353,7 @@ def generatexls(name, score):
 
     ####################tail end########################
 
-    xlsname = "%s.xls" % name[0][u"学号"]
+    xlsname = "%s%s.xls" % (resultpath.get(),name[0][u"学号"])
 
     wb.save(unicode(xlsname))
 
@@ -354,6 +370,18 @@ def queryprocess():
     for q in querylist:
         name = scan(nameinfolist, infopath.get(), q)
         score = scan(scoreinfolist, transcriptpath.get(), q)
+
+        if not len(name):
+            continue
+
+        for x in score:
+            if not x[u"课程名称"]:
+                score.remove(x)
+                continue
+
+            if not x[u"课程名称"].strip():
+                score.remove(x)
+                continue
 
         generatexls(name, score)
 
