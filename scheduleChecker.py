@@ -10,6 +10,8 @@ from tkMessageBox import *
 import os
 from ConfigParser import *
 import sys
+import string
+import re
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
@@ -20,11 +22,10 @@ def readConfig():
 
         cf = ConfigParser()
         cf.add_section("ExcelFilePath")
-        cf.set("ExcelFilePath", "path", "")
-        cf.add_section("Field")
-
-        cf.set("Field", "Field_0", "")
-
+        cf.set("ExcelFilePath", "score", "")
+        cf.set("ExcelFilePath", "name", "")
+        # cf.add_section("Field")
+        # cf.set("Field", "Field_0", "")
         cf.add_section("Query")
         cf.set("Query", "key", "")
 
@@ -37,11 +38,11 @@ def readConfig():
         cf = ConfigParser()
         cf.read("./config.ini")
 
-        filepath.set(cf.get("ExcelFilePath", "path"))
-
-        for k, v in cf.items("Field"):
-            if v.strip():
-                field.insert(END, v)
+        transcriptpath.set(cf.get("ExcelFilePath", "score"))
+        infopath.set(cf.get("ExcelFilePath", "name"))
+        # for k, v in cf.items("Field"):
+        #     if v.strip():
+        #         field.insert(END, v)
 
         query.set(cf.get("Query", "key"))
     except:
@@ -51,13 +52,12 @@ def writeConfig():
 
     cf = ConfigParser()
     cf.add_section("ExcelFilePath")
-    cf.set("ExcelFilePath", "path", unicode(filepath.get()))
-    cf.add_section("Field")
-
-    ft = field.get(0, END)
-
-    for i in range(len(ft)):
-        cf.set("Field", "Field_"+str(i), unicode(ft[i]))
+    cf.set("ExcelFilePath", "score", unicode(transcriptpath.get()))
+    cf.set("ExcelFilePath", "name", unicode(infopath.get()))
+    # cf.add_section("Field")
+    # ft = field.get(0, END)
+    # for i in range(len(ft)):
+    #     cf.set("Field", "Field_"+str(i), unicode(ft[i]))
 
     cf.add_section("Query")
     cf.set("Query", "key", unicode(query.get()))
@@ -73,13 +73,6 @@ root.resizable(width=False, height=False)
 
 pathframe = LabelFrame(root, text=u"路径设置")
 
-pathtip = Label(pathframe,text=u"文件路径: ")
-pathtip.pack(side=LEFT)
-
-filepath = StringVar()
-pathinput = Entry(pathframe, width=50, textvariable=filepath)
-pathinput.pack(side=LEFT, fill=X, expand=1, padx=2)
-
 def filebrowse(target):
     target.set("") #清空entry里面的内容
     #调用filedialog模块的askdirectory()函数去打开文件夹
@@ -87,47 +80,27 @@ def filebrowse(target):
     if fp:
         target.set(fp+"/") #将选择好的路径加入到entry里面
 
-pathbtn = Button(pathframe, text=u"浏览", command=lambda: filebrowse(filepath))
-pathbtn.pack(side=LEFT, padx=2)
+transcriptframe = Frame(pathframe)
+transcripttip = Label(transcriptframe,text=u"成绩路径: ")
+transcripttip.pack(side=LEFT)
+transcriptpath = StringVar()
+transcriptinput = Entry(transcriptframe, width=50, textvariable=transcriptpath)
+transcriptinput.pack(side=LEFT, fill=X, expand=1, padx=2)
+transcriptbtn = Button(transcriptframe, text=u"浏览", command=lambda: filebrowse(transcriptpath))
+transcriptbtn.pack(side=LEFT, padx=2)
+transcriptframe.pack(side=TOP, fill=X, expand=1)
 
-operateframe = Frame(root)
+infoframe = Frame(pathframe)
+infotip = Label(infoframe,text=u"名单路径: ")
+infotip.pack(side=LEFT)
+infopath = StringVar()
+infoinput = Entry(infoframe, width=50, textvariable=infopath)
+infoinput.pack(side=LEFT, fill=X, expand=1, padx=2)
+infobtn = Button(infoframe, text=u"浏览", command=lambda: filebrowse(infopath))
+infobtn.pack(side=LEFT, padx=2)
+infoframe.pack(side=TOP, fill=X, expand=1)
 
-filedframe = LabelFrame(operateframe, text=u"内容选择")
-
-rowframe = Frame(filedframe)
-rowframe.pack(side=TOP)
-rowlabel = Label(rowframe, text=u"核对信息: ")
-rowlabel.pack(side=LEFT)
-title = StringVar()
-rowinput = Entry(rowframe, textvariable=title)
-rowinput.pack(side=LEFT, fill=X, expand=1)
-
-def insertfield(event):
-
-    if not title.get().strip():
-        return
-
-    for x in field.get(0, END):
-        if title.get().strip() == x:
-            return
-
-    field.insert(END, title.get())
-
-rowinput.bind("<Return>", insertfield)
-
-fieldname = StringVar()
-field = Listbox(filedframe, listvariable=fieldname, selectmode=SINGLE)
-field.pack(side=TOP, fill=BOTH, expand=1)
-
-def deleteitems(event):
-    field.delete(field.curselection()[0])
-
-field.bind("<Delete>", deleteitems)
-
-rowbtn = Button(rowframe, text=u"添加", command=lambda: insertfield(""))
-rowbtn.pack(side=LEFT)
-
-queryframe = LabelFrame(operateframe, text=u"查询结果")
+queryframe = LabelFrame(root, text=u"查询结果")
 
 inputframe = Frame(queryframe)
 inputframe.pack(side=TOP, fill=X, expand=1)
@@ -140,21 +113,16 @@ queryinput.pack(side=LEFT, fill=X, expand=1)
 queryresult = Text(queryframe)
 queryresult.pack(side=TOP, fill=X, expand=1)
 
-def scan(key):
-    queryresult.insert(END, key+"begin\n")
-
-    if not filepath:
+def scan(valuelist, path, key):
+    if not path:
         showwarning(u"错误", u"请输入路径！")
         return
 
-    if not fieldname.get():
+    if not key:
         showwarning(u"错误", u"请输入查询信息！")
         return
 
-    result = dict()
-
-    for item in field.get(0, END):
-        result[item] = ""
+    result = list()
 
     def findrc(sh, i):
         for r in range(sh.nrows):
@@ -163,11 +131,16 @@ def scan(key):
                 if cmp(i,v)==0:
                     return (r,c)
 
-    for f in os.listdir(filepath.get()):
-        if not (".xls" in f or ".xlsx" in f):
+    for f in os.listdir(path):
+
+        p = path + f
+
+        if os.path.isdir(p):
+            result.extend(scan(valuelist, p+"/", key))
             continue
 
-        p = filepath.get() + f
+        if not (".xls" in f or ".xlsx" in f):
+            continue
 
         try:
             xls = open_workbook(p)
@@ -183,25 +156,26 @@ def scan(key):
 
             row = rtemp[0]
 
-            for info in result.keys():
-                result[info] = findrc(sh, info)
+            tmp = dict()
+            result.append(tmp)
 
-            for r in result.keys():
-                if not result[r]:
+            for vl in valuelist:
+                tmp[vl] = findrc(sh, vl)
+
+            for r in tmp.keys():
+                if not tmp[r]:
                     continue
 
-                result[r] = unicode( sh.cell_value(row, result[r][1]) )
+                tmp[r] = unicode( sh.cell_value(row, tmp[r][1]) )
 
-                queryresult.insert(END, result[r])
+                queryresult.insert(END, tmp[r])
                 queryresult.insert(END, ",")
 
             queryresult.insert(END, "\n")
 
-    queryresult.insert(END, "end\n")
-
     return result
 
-def generatexls(result):
+def generatexls(name, score):
 
     wb = Workbook()
 
@@ -250,11 +224,11 @@ def generatexls(result):
     ws.row(3).height_mismatch = 1
     ws.row(3).height = 18*20
 
-    info = "   姓名：%s    学号：%s    院、系：%s" % (result[u"姓名"].encode("utf-8"),result[u"学号"].encode("utf-8"),result[u"学院"].encode("utf-8"))
+    info = "   姓名：%s    学号：%s    院、系：%s" % (name[0][u"学生姓名"].encode("utf-8"),name[0][u"学号"].encode("utf-8"),name[0][u"院系"].encode("utf-8"))
     ws.write_merge(3,3,0,6, unicode(info), personalinfostyle)
     ws.row(4).height_mismatch = 1
     ws.row(4).height = 18*20
-    info = "   专业：%s    方向：信号处理技术    导  师：黄祥林" % result[u"专业"].encode("utf-8")
+    info = "   专业：%s    方向：%s    导  师：%s" % (name[0][u"专业"].encode("utf-8"),name[0][u"研究方向"].encode("utf-8"),name[0][u"导师姓名"].encode("utf-8"))
     ws.write_merge(4,4,0,6,unicode(info), personalinfostyle)
 
     ####################title end########################
@@ -310,12 +284,32 @@ def generatexls(result):
         ws.row(6+i).height = 23*20
 
         ws.write(6+i,0,i,easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
-        ws.write(6+i,1,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
-        ws.write(6+i,2,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
-        ws.write(6+i,3,2,easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
-        ws.write(6+i,4,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
-        ws.write(6+i,5,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
-        ws.write(6+i,6,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+
+        if i>=len(score) or not score[i][u"课程名称"].strip():
+            ws.write(6+i,1,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            ws.write(6+i,2,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            ws.write(6+i,3,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            ws.write(6+i,4,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            ws.write(6+i,5,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            ws.write(6+i,6,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            continue
+        else:
+            ws.write(6+i,1,score[i][u"课程名称"],easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            ws.write(6+i,2,u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            ws.write(6+i,3,2,easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+
+            timedict = {u"上":4,u"下":5,u"1":4,u"2":5,}
+            t = score[i][u"学年学期"][len(score[i][u"学年学期"])-1]
+
+            if timedict[t]==4:
+                ws.write(6+i, 4, int(round(float(score[i][u"考试成绩"]))),easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+                ws.write(6+i, 5, u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+            else:
+                ws.write(6+i, 5, int(round(float(score[i][u"考试成绩"]))),easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+                ws.write(6+i, 4, u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+
+            ws.write(6+i, 6, u"",easyxf('font: name SimSum, height 240; borders: left thin, right thin, top thin, bottom thin; alignment: vert center, horz center;'))
+
     ####################table end########################
 
     ####################tail begin########################
@@ -343,7 +337,7 @@ def generatexls(result):
 
     ####################tail end########################
 
-    xlsname = "%s.xls" % result[u"学号"]
+    xlsname = "%s.xls" % name[0][u"学号"]
 
     wb.save(unicode(xlsname))
 
@@ -354,17 +348,20 @@ def queryprocess():
 
     querylist = query.get().strip().split(",")
 
+    nameinfolist = [u"院系", u"学号", u"学生姓名", u"专业", u"研究方向", u"导师姓名"]
+    scoreinfolist = [u"学年学期", u"课程名称", u"考试成绩"]
+
     for q in querylist:
-        generatexls(scan(q))
+        name = scan(nameinfolist, infopath.get(), q)
+        score = scan(scoreinfolist, transcriptpath.get(), q)
+
+        generatexls(name, score)
 
 querybtn = Button(inputframe, text=u"查询", command=queryprocess)
 querybtn.pack(side=LEFT)
 
-filedframe.pack(side=LEFT, fill=BOTH, expand=1, anchor=W)
-queryframe.pack(side=RIGHT, anchor=E)
-
 pathframe.pack(side=TOP, fill=X, expand=1, padx=5, pady=2)
-operateframe.pack(side=TOP, fill=X, expand=1, padx=5, pady=2)
+queryframe.pack(side=TOP, fill=X, expand=1, padx=5, pady=2)
 
 root.wm_protocol("WM_DELETE_WINDOW", writeConfig)
 
