@@ -1,5 +1,4 @@
-__author__ = "anjing"
-# -*- coding: utf-8 -*-
+#-*-coding:utf-8-*-
 
 from Tkinter import *
 from tkFileDialog import *
@@ -71,10 +70,10 @@ def writeConfig():
 
 root = Tk()
 
-root.title(u"课表核对")
+root.title(u"Check")
 root.resizable(width=False, height=False)
 
-pathframe = LabelFrame(root, text=u"路径设置")
+pathframe = LabelFrame(root, text=u"Path")
 
 def filebrowse(target):
     target.set("") #清空entry里面的内容
@@ -84,40 +83,40 @@ def filebrowse(target):
         target.set(fp+"/") #将选择好的路径加入到entry里面
 
 transcriptframe = Frame(pathframe)
-transcripttip = Label(transcriptframe,text=u"成绩路径: ")
+transcripttip = Label(transcriptframe,text=u"score: ")
 transcripttip.pack(side=LEFT)
 transcriptpath = StringVar()
 transcriptinput = Entry(transcriptframe, width=50, textvariable=transcriptpath)
 transcriptinput.pack(side=LEFT, fill=X, expand=1, padx=2)
-transcriptbtn = Button(transcriptframe, text=u"浏览", command=lambda: filebrowse(transcriptpath))
+transcriptbtn = Button(transcriptframe, text=u"browse", command=lambda: filebrowse(transcriptpath))
 transcriptbtn.pack(side=LEFT, padx=2)
 transcriptframe.pack(side=TOP, fill=X, expand=1)
 
 infoframe = Frame(pathframe)
-infotip = Label(infoframe,text=u"名单路径: ")
+infotip = Label(infoframe,text=u"path: ")
 infotip.pack(side=LEFT)
 infopath = StringVar()
 infoinput = Entry(infoframe, width=50, textvariable=infopath)
 infoinput.pack(side=LEFT, fill=X, expand=1, padx=2)
-infobtn = Button(infoframe, text=u"浏览", command=lambda: filebrowse(infopath))
+infobtn = Button(infoframe, text=u"browse", command=lambda: filebrowse(infopath))
 infobtn.pack(side=LEFT, padx=2)
 infoframe.pack(side=TOP, fill=X, expand=1)
 
 resultframe = Frame(pathframe)
-resulttip = Label(resultframe,text=u"结果路径: ")
+resulttip = Label(resultframe,text=u"result: ")
 resulttip.pack(side=LEFT)
 resultpath = StringVar()
 resultinput = Entry(resultframe, width=50, textvariable=resultpath)
 resultinput.pack(side=LEFT, fill=X, expand=1, padx=2)
-resultbtn = Button(resultframe, text=u"浏览", command=lambda: filebrowse(resultpath))
+resultbtn = Button(resultframe, text=u"browse", command=lambda: filebrowse(resultpath))
 resultbtn.pack(side=LEFT, padx=2)
 resultframe.pack(side=TOP, fill=X, expand=1)
 
-queryframe = LabelFrame(root, text=u"查询结果")
+queryframe = LabelFrame(root, text=u"result")
 
 inputframe = Frame(queryframe)
 inputframe.pack(side=TOP, fill=X, expand=1)
-querylabel = Label(inputframe, text=u"查询对象: ")
+querylabel = Label(inputframe, text=u"result: ")
 querylabel.pack(side=LEFT)
 query = StringVar()
 queryinput = Entry(inputframe, textvariable=query)
@@ -134,18 +133,18 @@ sl.config(command=queryresult.yview)
 
 def checkpath():
     queryresult.config(state=NORMAL)
-    queryresult.insert(END, u"===========开始检查%s=============\n" % transcriptpath.get())
+    queryresult.insert(END, u"===========begin%s=============\n" % transcriptpath.get())
     queryresult.config(state=DISABLED)
 
     xlsscan.check(transcriptpath.get(), queryresult)
 
     queryresult.config(state=NORMAL)
-    queryresult.insert(END, u"===========检查结束%s=============\n" % transcriptpath.get())
+    queryresult.insert(END, u"===========end%s=============\n" % transcriptpath.get())
     queryresult.config(state=DISABLED)
 
     return
 
-checkbtn = Button(transcriptframe, text=u"检查", command=checkpath)
+checkbtn = Button(transcriptframe, text=u"check", command=checkpath)
 checkbtn.pack(side=LEFT, padx=2)
 
 def queryprocess():
@@ -166,7 +165,7 @@ def queryprocess():
 
         xlswriter.generatexls(name, score, resultpath.get())
 
-querybtn = Button(inputframe, text=u"查询", command=queryprocess)
+querybtn = Button(inputframe, text=u"query", command=queryprocess)
 querybtn.pack(side=LEFT)
 
 pathframe.pack(side=TOP, fill=X, expand=1, padx=5, pady=2)

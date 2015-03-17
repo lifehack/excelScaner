@@ -1,4 +1,3 @@
-__author__ = 'Laotaitai'
 # -*- coding: utf-8 -*-
 
 from xlrd import *

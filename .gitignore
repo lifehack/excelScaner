@@ -34,3 +34,19 @@ Icon
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+/data/score/contact/*.xlsx
+/data/score/course/成绩单12级/12硕/2012-2013上/*.xls
+/data/score/course/成绩单12级/12硕/2012-2013下工学院硕士成绩/*.xls
+/data/score/course/成绩单12级/12硕/2012-2013下工学院硕士成绩/*.xlsx
+/data/score/course/成绩单13级/2013-2014上/博士/*.xls
+/data/score/course/成绩单13级/2013-2014上/工/*.xls
+/data/score/course/成绩单13级/2013-2014上/理/*.xls
+/data/score/course/成绩单13级/2013-2014上/计/*.xls
+/data/score/course/成绩单13级/2013-2014下/2013-2014下/博士/*.xls
+/data/score/course/成绩单13级/2013-2014下/2013-2014下/工/*.xls
+/data/score/course/成绩单13级/2013-2014下/2013-2014下/工学院/*.xls
+/data/score/course/成绩单13级/2013-2014下/2013-2014下/工学院/2013级自然辩证法成绩/*.xls
+/data/score/course/成绩单13级/2013-2014下/2013-2014下/工学院/*.xlsx
+/data/score/course/成绩单13级/2013-2014下/2013-2014下/理学院/*.xls
+/data/score/course/成绩单13级/2013-2014下/2013-2014下/计算机/*.xls
+/data/score/student/*.xls
