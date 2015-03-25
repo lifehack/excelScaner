@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-
 from xlrd import *
 
 import os
 import sys
-from Tkinter import *
-
-reload(sys)
-sys.setdefaultencoding("utf-8")
+from tkinter import *
 
 def scan(valuelist, path, key, log):
     if not path:
@@ -21,18 +16,15 @@ def scan(valuelist, path, key, log):
     def findrc(sh, i):
         for r in range(sh.nrows):
             for c in range(sh.ncols):
-                v = unicode(sh.cell_value(r, c)).replace(" ","")
-                if cmp(i,v)==0:
+                v = str(sh.cell_value(r, c)).replace(" ","")
+                if i==v:
                     return (r,c)
 
     for f in os.listdir(path):
 
-        if not isinstance(f,unicode):
-            ufile = f.decode('gbk').encode('utf-8')
-        else:
-            ufile = f
+        ufile = f
 
-        p = unicode(path + ufile)
+        p = path + ufile
 
         if os.path.isdir(p):
             result.extend(scan(valuelist, p+"/", key, log))
@@ -63,7 +55,7 @@ def scan(valuelist, path, key, log):
             if not tmp[r]:
                 continue
 
-            tmp[r] = unicode( sh.cell_value(row, tmp[r][1]) )
+            tmp[r] = str( sh.cell_value(row, tmp[r][1]) )
 
             log.config(state=NORMAL)
             log.insert(END, tmp[r])
@@ -118,11 +110,11 @@ def check(path, log):
 
         sh = xls.sheets()[0]
 
-        colindex1 = findrc(sh, u"课程名称")
-        colindex2 = findrc(sh, u"考试成绩")
-        colindex3 = findrc(sh, u"学号")
-        colindex4 = findrc(sh, u"姓名")
-        colindex5 = findrc(sh, u"学年学期")
+        colindex1 = findrc(sh, "课程名称")
+        colindex2 = findrc(sh, "考试成绩")
+        colindex3 = findrc(sh, "学号")
+        colindex4 = findrc(sh, "姓名")
+        colindex5 = findrc(sh, "学年学期")
 
         if (not colindex1) or (not colindex2) or (not colindex3) or (not colindex4) or (not colindex5):
             log.config(state=NORMAL)
